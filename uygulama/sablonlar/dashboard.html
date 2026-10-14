@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn&amp;Live - Yönetim Paneli</title>
+<style>
+  :root{--bg:#0b1020;--kart:#141b33;--yazi:#e8ecf8;--soluk:#8b95b8;--vurgu:#2dd4a7;--hata:#ff6b6b}
+  body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--yazi)}
+  header{display:flex;justify-content:space-between;align-items:center;padding:16px 32px;border-bottom:1px solid #222b4a}
+  header b span{color:var(--vurgu)} a{color:var(--vurgu);text-decoration:none;margin-left:16px}
+  main{padding:24px 32px} .kartlar{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+  .kart{background:var(--kart);border:1px solid #222b4a;border-radius:14px;padding:16px}
+  .kart small{color:var(--soluk)} .kart div{font-size:2rem;font-weight:700;color:var(--vurgu)}
+  input{padding:10px;border-radius:8px;border:1px solid #2c3760;background:#0e1530;color:var(--yazi);width:260px;margin-bottom:12px}
+  .tablo{overflow-x:auto} table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:10px;border-bottom:1px solid #222b4a} th{color:var(--soluk);font-weight:500}
+  #durum{color:var(--soluk);padding:16px 0} #durum.hata{color:var(--hata)}
+</style>
+</head>
+<body>
+<header><b>Learn<span>&amp;Live</span> · Öğrenci Adayı Paneli</b>
+  <span><a href="/">Karşılama Sayfası</a><a href="/api/adaylar/csv">CSV İndir</a></span></header>
+<main>
+  <div class="kartlar">
+    <div class="kart"><small>TOPLAM ADAY</small><div id="kToplam">0</div></div>
+    <div class="kart"><small>BU AY</small><div id="kAy">0</div></div>
+    <div class="kart"><small>BUGÜN</small><div id="kBugun">0</div></div>
+  </div>
+  <input id="ara" placeholder="Ara (isim, ülke, telefon...)">
+  <div id="durum">Yükleniyor...</div>
+  <div class="tablo"><table><thead><tr>
+    <th>Ad Soyad</th><th>Telefon</th><th>Ülke</th><th>Seviye</th><th>Not</th><th>Tarih</th>
+  </tr></thead><tbody id="govde"></tbody></table></div>
+</main>
+<script>
+let tum = [];
+const govde = document.getElementById('govde'), durum = document.getElementById('durum');
+
+function ciz(liste) {
+  govde.replaceChildren();
+  durum.textContent = liste.length ? '' : 'Henüz kayıtlı öğrenci adayı bulunmuyor.';
+  for (const a of liste) {
+    const tr = document.createElement('tr');
+    for (const alan of ['isim', 'telefon', 'hedef_ulke', 'dil_seviyesi', 'mesaj', 'olusturulma_tarihi']) {
+      const td = document.createElement('td');
+      td.textContent = a[alan] ?? '';     // zararlı HTML çalışmaz
+      tr.appendChild(td);
+    }
+    govde.appendChild(tr);
+  }
+}
+
+async function yukle() {
+  try {
+    const cevap = await fetch('/api/adaylar');
+    const veri = await cevap.json();
+    if (!veri.basari) throw new Error(veri.hata || 'Bilinmeyen hata');
+    tum = veri.adaylar;
+    document.getElementById('kToplam').textContent = veri.istatistik.toplam;
+    document.getElementById('kAy').textContent = veri.istatistik.bu_ay;
+    document.getElementById('kBugun').textContent = veri.istatistik.bugun;
+    ciz(tum);
+  } catch (hata) {
+    durum.className = 'hata';
+    durum.textContent = 'Veriler yüklenemedi: ' + hata.message;
+  }
+}
+
+document.getElementById('ara').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  ciz(tum.filter(a => Object.values(a).join(' ').toLowerCase().includes(q)));
+});
+yukle();
+</script>
+</body>
+</html>

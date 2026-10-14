@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Learn&amp;Live - Yurt Dışına Hazırlık</title>
+<style>
+  :root{--bg:#0b1020;--kart:#141b33;--yazi:#e8ecf8;--soluk:#8b95b8;--vurgu:#2dd4a7;--hata:#ff6b6b}
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--yazi)}
+  header{display:flex;justify-content:space-between;padding:16px 32px;border-bottom:1px solid #222b4a}
+  header b span{color:var(--vurgu)} a{color:var(--soluk);text-decoration:none}
+  main{max-width:1100px;margin:auto;padding:32px;display:grid;gap:24px;grid-template-columns:1fr 1fr}
+  @media(max-width:800px){main{grid-template-columns:1fr}}
+  h1{font-size:2.2rem;margin:0 0 12px} h1 span{color:var(--vurgu)}
+  .kart{background:var(--kart);border:1px solid #222b4a;border-radius:16px;padding:20px}
+  #sohbet{height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+  .balon{padding:10px 14px;border-radius:12px;max-width:85%;white-space:pre-wrap}
+  .ben{align-self:flex-end;background:#243056} .asistan{align-self:flex-start;background:#1c2744}
+  .hata{color:var(--hata)}
+  input,select,textarea,button{width:100%;padding:10px;margin:4px 0 10px;border-radius:8px;border:1px solid #2c3760;background:#0e1530;color:var(--yazi);font:inherit}
+  button{background:var(--vurgu);color:#04221a;font-weight:700;border:0;cursor:pointer}
+  button:disabled{opacity:.5;cursor:wait} .satir{display:flex;gap:8px} .satir input{margin-bottom:0}
+  .satir button{width:auto} #formDurum{min-height:1.4em}
+</style>
+</head>
+<body>
+<header><b>Learn<span>&amp;Live</span></b><a href="/panel">Yönetim Paneli →</a></header>
+<main>
+  <section>
+    <h1>Yurt dışında <span>gündelik hayata</span> hazır olun.</h1>
+    <p style="color:var(--soluk)">Erasmus ve yüksek lisans öğrencileri için ev kiralama, ulaşım, alışveriş ve sosyal iletişim senaryolarıyla dil hazırlığı. İngilizce pilot programı için yapay zekâ asistanımıza sorun, ardından formu doldurun.</p>
+    <div class="kart">
+      <h3 style="margin-top:0">Bilgilerinizi bırakın</h3>
+      <label>Ad Soyad</label><input id="isim" maxlength="100" placeholder="Ayşe Yılmaz">
+      <label>Telefon</label><input id="telefon" placeholder="+90 555 000 0000">
+      <label>Gideceğiniz ülke</label><input id="hedef_ulke" maxlength="100" placeholder="Almanya">
+      <label>Dil seviyeniz</label>
+      <select id="dil_seviyesi"><option value="">Bilmiyorum</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+      <label>Not (isteğe bağlı)</label><textarea id="mesaj" rows="2" maxlength="1000"></textarea>
+      <button id="btnKaydet">Ücretsiz Deneme Talep Et</button>
+      <div id="formDurum"></div>
+    </div>
+  </section>
+  <section class="kart">
+    <h3 style="margin-top:0">Learn&amp;Live Asistan</h3>
+    <div id="sohbet"><div class="balon asistan">Merhaba! Program hakkında merak ettiklerinizi sorabilirsiniz.</div></div>
+    <div class="satir"><input id="soru" maxlength="1000" placeholder="Sorunuzu yazın... (Enter)"><button id="btnSor">Gönder</button></div>
+  </section>
+</main>
+<script>
+const gecmis = [];
+const sohbet = document.getElementById('sohbet');
+
+function balonEkle(metin, sinif) {
+  const d = document.createElement('div');
+  d.className = 'balon ' + sinif;
+  d.textContent = metin;           // textContent: zararlı HTML çalışmaz
+  sohbet.appendChild(d);
+  sohbet.scrollTop = sohbet.scrollHeight;
+}
+
+async function sohbetGonder() {
+  const kutu = document.getElementById('soru');
+  const btn = document.getElementById('btnSor');
+  const mesaj = kutu.value.trim();
+  if (!mesaj) return;
+  balonEkle(mesaj, 'ben'); kutu.value = ''; btn.disabled = true;
+  try {
+    const cevap = await fetch('/api/sohbet', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({mesaj, gecmis})
+    });
+    const veri = await cevap.json();
+    if (veri.basari) {
+      balonEkle(veri.cevap, 'asistan');
+      gecmis.push({role: 'user', content: mesaj}, {role: 'assistant', content: veri.cevap});
+    } else {
+      balonEkle(veri.hata || 'Bir sorun oluştu.', 'asistan hata');
+    }
+  } catch (hata) {
+    balonEkle('Sunucuya ulaşılamadı. Lütfen tekrar deneyin.', 'asistan hata');
+  } finally {
+    btn.disabled = false; kutu.focus();
+  }
+}
+
+async function adayKaydet() {
+  const durum = document.getElementById('formDurum');
+  const btn = document.getElementById('btnKaydet');
+  const alan = id => document.getElementById(id).value.trim();
+  const govde = {isim: alan('isim'), telefon: alan('telefon'), hedef_ulke: alan('hedef_ulke'),
+                 dil_seviyesi: alan('dil_seviyesi'), mesaj: alan('mesaj')};
+  btn.disabled = true; durum.className = ''; durum.textContent = 'Gönderiliyor...';
+  try {
+    const cevap = await fetch('/api/adaylar', {
+      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(govde)
+    });
+    const veri = await cevap.json();
+    durum.className = veri.basari ? '' : 'hata';
+    durum.textContent = veri.basari ? '✓ ' + veri.mesaj : veri.hata;
+    if (veri.basari) document.querySelectorAll('input:not(#soru),textarea').forEach(e => e.value = '');
+  } catch (hata) {
+    durum.className = 'hata'; durum.textContent = 'Sunucuya ulaşılamadı.';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('btnSor').addEventListener('click', sohbetGonder);
+document.getElementById('soru').addEventListener('keydown', e => { if (e.key === 'Enter') sohbetGonder(); });
+document.getElementById('btnKaydet').addEventListener('click', adayKaydet);
+</script>
+</body>
+</html>
