@@ -7,7 +7,7 @@ from flask import current_app
 log = logging.getLogger(__name__)
 
 GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
-GROQ_MODEL = 'llama-3.3-70b-versatile'
+GROQ_MODEL = 'openai/gpt-oss-120b'
 OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 OPENAI_MODEL = 'gpt-4o-mini'
 GEMINI_MODEL = 'gemini-2.0-flash'
