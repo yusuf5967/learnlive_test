@@ -85,8 +85,6 @@ def aday_kaydet():
 
     if len(isim) < 2:
         return _hata('Lütfen adınızı ve soyadınızı yazın.', 400)
-    if not TELEFON_DESENI.match(telefon):
-        return _hata('Geçerli bir telefon numarası girin (örn. +90 555 000 0000).', 400)
     if dil_seviyesi not in GECERLI_SEVIYELER:
         return _hata('Dil seviyesi A1-C2 arasında olmalıdır.', 400)
     if len(mesaj) > 1000 or len(isim) > 100 or len(hedef_ulke) > 100:
