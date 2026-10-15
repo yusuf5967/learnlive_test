@@ -85,8 +85,6 @@ def aday_kaydet():
 
     if len(isim) < 2:
         return _hata('Lütfen adınızı ve soyadınızı yazın.', 400)
-    if dil_seviyesi not in GECERLI_SEVIYELER:
-        return _hata('Dil seviyesi A1-C2 arasında olmalıdır.', 400)
     if len(mesaj) > 1000 or len(isim) > 100 or len(hedef_ulke) > 100:
         return _hata('Girilen alanlardan biri çok uzun.', 400)
 
